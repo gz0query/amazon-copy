@@ -1,8 +1,8 @@
 .amazon-header {
   background-color: rgb(19, 25, 33);
   color: white;
-  padding-left: 15px;
-  padding-right: 15px;
+  width: 100%;
+  padding: 0 15px;
 
   display: flex;
   align-items: center;
@@ -11,18 +11,12 @@
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
+  z-index: 10;
   height: 60px;
 }
 
 .amazon-header-left-section {
-  width: 180px;
-}
-
-@media (max-width: 800px) {
-  .amazon-header-left-section {
-    width: unset;
-  }
+  flex: 0 0 180px;
 }
 
 .header-link {
@@ -62,6 +56,7 @@
 .amazon-header-middle-section {
   flex: 1;
   max-width: 850px;
+  min-width: 0;
   margin-left: 10px;
   margin-right: 10px;
   display: flex;
@@ -97,7 +92,7 @@
 }
 
 .amazon-header-right-section {
-  width: 180px;
+  flex: 0 0 180px;
   flex-shrink: 0;
   display: flex;
   justify-content: end;
@@ -127,6 +122,7 @@
 
 .cart-icon {
   width: 50px;
+  height: auto;
 }
 
 .cart-text {
@@ -146,4 +142,90 @@
   
   width: 26px;
   text-align: center;
+}
+
+@media (max-width: 768px) {
+  .amazon-header {
+    height: auto;
+    min-height: 104px;
+    padding: 7px 12px 9px;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    row-gap: 7px;
+  }
+
+  .amazon-header-left-section {
+    flex: 0 1 auto;
+    order: 1;
+  }
+
+  .amazon-logo {
+    display: block;
+    width: clamp(72px, 22vw, 100px);
+    margin-top: 0;
+  }
+
+  .amazon-mobile-logo {
+    display: none;
+  }
+
+  .amazon-header-right-section {
+    width: auto;
+    flex: 0 0 auto;
+    order: 2;
+  }
+
+  .amazon-header-middle-section {
+    flex: 0 0 100%;
+    width: 100%;
+    max-width: none;
+    order: 3;
+    margin: 0;
+  }
+
+  .search-bar {
+    min-width: 0;
+    height: 40px;
+    font-size: 16px;
+    padding-left: 12px;
+  }
+
+  .search-button {
+    width: 44px;
+    height: 40px;
+  }
+
+  .search-icon {
+    width: 19px;
+    height: auto;
+    margin: 0 auto;
+  }
+
+  .header-link {
+    padding: 5px;
+  }
+
+  .returns-text {
+    font-size: 11px;
+  }
+
+  .orders-text,
+  .cart-text {
+    font-size: 13px;
+  }
+
+  .cart-icon {
+    width: 38px;
+  }
+
+  .cart-quantity {
+    top: 1px;
+    left: 16px;
+    width: 22px;
+    font-size: 14px;
+  }
+
+  .cart-text {
+    margin-top: 9px;
+  }
 }
