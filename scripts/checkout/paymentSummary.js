@@ -1,5 +1,5 @@
 
-import {cart} from '../../data/cart.js';
+import {cart, clearCart} from '../../data/cart.js';
 import {getProduct} from '../../data/products.js'
 import {getDeliveryOption} from '../../data/deliveryOptions.js';
 import {formatCurrency} from '../utils/money.js'
@@ -11,19 +11,20 @@ export function renderPaymentSummary() {
 
 
    cart.forEach((cartItem) => {
-   const product = getProduct(cartItem.productId);
-   productPriceCents += product.priceCents = cartItem.quantity;
-   
-   
-   const deliveryOption =  getDeliveryOption(cartItem.deliveryOptionId);
-shippingPriceCents += deliveryOption.priceCents;
-   
-   
+     const product = getProduct(cartItem.productId);
+     productPriceCents += product.priceCents * cartItem.quantity;
+
+     const deliveryOption = getDeliveryOption(cartItem.deliveryOptionId);
+     shippingPriceCents += deliveryOption.priceCents;
    });
    
    const totalBeforeTaxCents = productPriceCents + shippingPriceCents;
    const taxCents = totalBeforeTaxCents * 0.1;
    const totalCents = totalBeforeTaxCents + taxCents;
+   const totalCartQuantity = cart.reduce(
+     (total, cartItem) => total + cartItem.quantity,
+     0
+   );
    
    const paymentSummaryHTML = `
    
@@ -32,7 +33,7 @@ shippingPriceCents += deliveryOption.priceCents;
         </div>
 
     <div class="payment-summary-row">
-       <div>Items (3):</div>
+       <div>Items (${totalCartQuantity}):</div>
        
     <div class="payment-summary-money">
  $${formatCurrency(productPriceCents)}</div>
@@ -76,35 +77,31 @@ shippingPriceCents += deliveryOption.priceCents;
  .innerHTML = paymentSummaryHTML;
  
  document.querySelector('.js-place-order')
- .addEventListener('click', async () => {
-  try {
-    
-    const response = await fetch('https://supersimplebackend.dev/orders', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      cart: cart
-    })
-         
-   });
-   
-   const order = await response.json();
+ .addEventListener('click', (event) => {
+   if (cart.length === 0) {
+     return;
+   }
+
+   event.currentTarget.disabled = true;
+   const placedAt = new Date();
+   const order = {
+     orderId: crypto.randomUUID(),
+     orderDate: new Intl.DateTimeFormat('en-US', {
+       year: 'numeric',
+       month: 'long',
+       day: 'numeric'
+     }).format(placedAt),
+     placedAt: placedAt.toISOString(),
+     totalCostCents: totalCents,
+     items: cart.map((cartItem) => ({ ...cartItem }))
+   };
+
    addOrder(order);
-    
-  } catch (error) {
-   console.log('unexpected error. Try again later.')
-  }
-   
-   
+   clearCart();
    window.location.href = 'orders.html';
  });
  
 }
-
-
-
 
 
 

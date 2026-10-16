@@ -147,7 +147,7 @@
 @media (max-width: 768px) {
   .amazon-header {
     height: auto;
-    min-height: 104px;
+    min-height: 110px;
     padding: 7px 12px 9px;
     flex-wrap: wrap;
     justify-content: space-between;
