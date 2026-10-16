@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <!-- This code is needed for responsive design to work properly across device sizes. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Amazon Project</title>
+
+  <!-- Load Roboto font family from Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="styles/shared/general.css">
+  <link rel="stylesheet" href="styles/shared/amazon-header.css">
+  <link rel="stylesheet" href="styles/pages/amazon.css">
+</head>
+
+<body>
+  <!-- Top Navigation Header -->
+  <header class="amazon-header">
+    <div class="amazon-header-left-section">
+      <a href="amazon.html" class="header-link">
+        <img class="amazon-logo" src="images/amazon-logo-white.png" alt="Amazon Logo">
+        <img class="amazon-mobile-logo" src="images/amazon-mobile-logo-white.png" alt="Amazon Mobile Logo">
+      </a>
+    </div>
+
+    <div class="amazon-header-middle-section">
+      <input class="search-bar" type="text" placeholder="Search">
+      <button class="search-button">
+        <img class="search-icon" src="images/icons/search-icon.png" alt="Search">
+      </button>
+    </div>
+
+    <div class="amazon-header-right-section">
+      <div class="account-container" id="account-container">
+        <button
+          class="account-trigger header-link"
+          id="account-toggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="account-menu">
+          <span id="user-greeting">Hello, sign in</span>
+          <span class="header-bold">Account &amp; Lists</span>
+        </button>
+
+        <div class="account-menu" id="account-menu" hidden>
+          <button class="account-signout-button" id="btn-header-signout" type="button">
+            Sign Out
+          </button>
+        </div>
+      </div>
+
+      <a class="orders-link header-link" href="orders.html">
+        <span class="returns-text">Returns</span>
+        <span class="orders-text">& Orders</span>
+      </a>
+
+      <a class="cart-link header-link" href="checkout.html">
+        <img class="cart-icon" src="images/icons/cart-icon.png" alt="Cart">
+        <div class="cart-quantity js-cart-quantity">0</div>
+        <div class="cart-text">Cart</div>
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Products Container -->
+  <main class="main">
+    <div class="products-grid js-products-grid">
+      <!-- Products will be dynamically generated here by scripts/amazon.js -->
+    </div>
+  </main>
+
+  <!-- Main JavaScript Module Entry Point -->
+  <script type="module" src="scripts/amazon.js"></script>
+</body>
+
+</html>

@@ -1,12 +1,28 @@
-import { orders } from '../data/orders.js';
+import { orders, setOrdersUser } from '../data/orders.js';
 import { getProduct, loadProducts } from '../data/products.js';
 import { getDeliveryOption } from '../data/deliveryOptions.js';
+import { cart, setCartUser } from '../data/cart.js';
+import { auth, onAuthStateChanged } from './firebase.js';
 
 const searchParams = new URL(window.location.href).searchParams;
 const orderId = searchParams.get('orderId');
 const productId = searchParams.get('productId');
 
-loadProducts(renderTracking);
+onAuthStateChanged(auth, (user) => {
+  if (!user) {
+    window.location.replace('index.html');
+    return;
+  }
+
+  setOrdersUser(user.uid);
+  setCartUser(user.uid);
+  const cartQuantity = cart.reduce(
+    (total, cartItem) => total + cartItem.quantity,
+    0
+  );
+  document.querySelector('.js-cart-quantity').textContent = cartQuantity;
+  loadProducts(renderTracking);
+});
 
 function renderTracking() {
   const trackingContainer = document.querySelector('.js-order-tracking');

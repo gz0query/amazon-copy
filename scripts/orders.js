@@ -1,11 +1,21 @@
-import { orders } from '../data/orders.js';
+import { orders, setOrdersUser } from '../data/orders.js';
 import { getProduct, loadProducts } from '../data/products.js';
 import { getDeliveryOption } from '../data/deliveryOptions.js';
 import { formatCurrency } from './utils/money.js';
-import { cart, addToCart } from '../data/cart.js';
+import { cart, addToCart, setCartUser } from '../data/cart.js';
+import { auth, onAuthStateChanged } from './firebase.js';
 
-loadProducts(renderOrders);
-updateCartQuantity();
+onAuthStateChanged(auth, (user) => {
+  if (!user) {
+    window.location.replace('index.html');
+    return;
+  }
+
+  setOrdersUser(user.uid);
+  setCartUser(user.uid);
+  updateCartQuantity();
+  loadProducts(renderOrders);
+});
 
 function updateCartQuantity() {
   const cartQuantity = cart.reduce(

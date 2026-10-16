@@ -1,6 +1,8 @@
-import { cart, addToCart } from '../data/cart.js';
+import { cart, addToCart, setCartUser } from '../data/cart.js';
+import { setOrdersUser } from '../data/orders.js';
 import { products, loadProducts } from '../data/products.js';
 import { formatCurrency } from './utils/money.js';
+import { auth, signOut, onAuthStateChanged } from './firebase.js';
 
 function updateCartQuantity() {
   const cartQuantity = cart.reduce(
@@ -13,9 +15,6 @@ function updateCartQuantity() {
     cartQuantityElement.textContent = cartQuantity;
   }
 }
-
-updateCartQuantity();
-loadProducts(renderProductsGrid);
 
 function renderProductsGrid(searchQuery = '') {
   let productsHTML = '';
@@ -101,20 +100,74 @@ function renderProductsGrid(searchQuery = '') {
 
 const searchInput = document.querySelector('.search-bar');
 const searchButton = document.querySelector('.search-button');
+const accountContainer = document.querySelector('#account-container');
+const accountToggle = document.querySelector('#account-toggle');
+const accountMenu = document.querySelector('#account-menu');
+let initializedUserId;
 
-function searchProducts() {
-  renderProductsGrid(searchInput.value);
-}
-
-searchInput.addEventListener('input', () => {
-  renderProductsGrid(searchInput.value);
-});
-
-searchButton.addEventListener('click', searchProducts);
-
-searchInput.addEventListener('keydown', (event) => {
-  if (event.key === 'Enter') {
-    event.preventDefault();
-    searchProducts();
+onAuthStateChanged(auth, (user) => {
+  if (!user) {
+    window.location.replace('index.html');
+    return;
   }
+
+  const firstName = user.displayName
+    ? user.displayName.split(' ')[0]
+    : user.email?.split('@')[0] || 'there';
+  document.querySelector('#user-greeting').textContent = `Hello, ${firstName}`;
+
+  if (initializedUserId === user.uid) {
+    return;
+  }
+  initializedUserId = user.uid;
+
+  setCartUser(user.uid);
+  setOrdersUser(user.uid);
+  updateCartQuantity();
+
+  accountToggle.addEventListener('click', () => {
+    const isOpen = !accountMenu.hidden;
+    accountMenu.hidden = isOpen;
+    accountToggle.setAttribute('aria-expanded', String(!isOpen));
+  });
+
+  accountMenu.addEventListener('click', (event) => {
+    event.stopPropagation();
+  });
+
+  document.addEventListener('click', (event) => {
+    if (!accountContainer.contains(event.target)) {
+      accountMenu.hidden = true;
+      accountToggle.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  document.querySelector('#btn-header-signout').addEventListener('click', async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      alert(`Could not sign out: ${error.message}`);
+    }
+  });
+
+  let searchQuery = '';
+  searchInput.addEventListener('input', () => {
+    searchQuery = searchInput.value;
+    renderProductsGrid(searchQuery);
+  });
+
+  searchButton.addEventListener('click', () => {
+    searchQuery = searchInput.value;
+    renderProductsGrid(searchQuery);
+  });
+
+  searchInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      searchQuery = searchInput.value;
+      renderProductsGrid(searchQuery);
+    }
+  });
+
+  loadProducts(() => renderProductsGrid(searchQuery));
 });
