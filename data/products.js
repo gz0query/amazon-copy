@@ -1,4 +1,6 @@
 import { formatCurrency } from '../scripts/utils/money.js';
+import { collection, getDocs } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
+import { db } from '../scripts/firebase.js';
 
 export function getProduct(productId) {
   let matchingProduct;
@@ -18,6 +20,10 @@ class Product {
   name;
   rating;
   priceCents;
+  inStock;
+  keywords;
+  category;
+  deleted;
 
   constructor(productDetails) {
     this.id = productDetails.id;
@@ -25,6 +31,10 @@ class Product {
     this.name = productDetails.name;
     this.rating = productDetails.rating;
     this.priceCents = productDetails.priceCents;
+    this.inStock = productDetails.inStock;
+    this.keywords = productDetails.keywords;
+    this.category = productDetails.category;
+    this.deleted = productDetails.deleted;
   }
 
   getStarsUrl() {
@@ -32,7 +42,7 @@ class Product {
   }
 
   getPrice() {
-    return `$${formatCurrency(this.priceCents)}`;
+    return `₦${formatCurrency(this.priceCents)}`;
   }
 
   extraInfoHTML() {
@@ -59,18 +69,77 @@ class Clothing extends Product {
 
 export let products = [];
 
+function normalizeProductDetails(productDetails) {
+  return {
+    ...productDetails,
+    id: String(productDetails.id),
+    image: productDetails.image || 'images/products/placeholder.png',
+    name: productDetails.name || 'Unnamed Product',
+    rating: {
+      stars: Number(productDetails.rating?.stars ?? 4.5),
+      count: Number(productDetails.rating?.count ?? 0)
+    },
+    priceCents: Number(productDetails.priceCents ?? 0),
+    keywords: Array.isArray(productDetails.keywords)
+      ? productDetails.keywords
+      : [productDetails.category || 'general'],
+    category: productDetails.category || 'Other',
+    inStock: productDetails.inStock !== false,
+    deleted: productDetails.deleted === true
+  };
+}
+
+export function createProduct(productDetails) {
+  const normalizedProduct = normalizeProductDetails(productDetails);
+  if (normalizedProduct.type === 'clothing' || normalizedProduct.sizeChartLink) {
+    return new Clothing(normalizedProduct);
+  }
+  return new Product(normalizedProduct);
+}
+
+export function setProducts(productsData) {
+  products = productsData
+    .filter((product) => product.deleted !== true)
+    .map(createProduct);
+}
+
+export async function loadFirestoreProducts() {
+  const snapshot = await getDocs(collection(db, 'products'));
+
+  snapshot.docs.forEach((docSnap) => {
+    const data = docSnap.data();
+    const normalizedProduct = normalizeProductDetails({
+      ...data,
+      id: String(docSnap.id)
+    });
+
+    const existingProductIndex = products.findIndex(
+      (product) => String(product.id) === normalizedProduct.id
+    );
+
+    if (normalizedProduct.deleted) {
+      if (existingProductIndex !== -1) {
+        products.splice(existingProductIndex, 1);
+      }
+      return;
+    }
+
+    const product = new Product(normalizedProduct);
+    if (existingProductIndex !== -1) {
+      Object.assign(products[existingProductIndex], product);
+    } else {
+      products.unshift(product);
+    }
+  });
+}
+
 export function loadProductsFetch() {
   const promise = fetch('https://supersimplebackend.dev/products')
     .then((response) => {
       return response.json();
     })
     .then((productsData) => {
-      products = productsData.map((productDetails) => {
-        if (productDetails.type === 'clothing') {
-          return new Clothing(productDetails);
-        }
-        return new Product(productDetails);
-      });
+      setProducts(productsData);
 
       console.log('load products');
     })
@@ -85,12 +154,7 @@ export function loadProducts(fun) {
   const xhr = new XMLHttpRequest();
 
   xhr.addEventListener('load', () => {
-    products = JSON.parse(xhr.response).map((productDetails) => {
-      if (productDetails.type === 'clothing') {
-        return new Clothing(productDetails);
-      }
-      return new Product(productDetails);
-    });
+    setProducts(JSON.parse(xhr.response));
 
     console.log('load products');
 
@@ -102,12 +166,7 @@ export function loadProducts(fun) {
   xhr.addEventListener('error', (error) => {
     console.log('unexpected error. please try again later.', error);
     // Fallback: If network request fails, populate using local array
-    products = defaultProducts.map((productDetails) => {
-      if (productDetails.type === 'clothing') {
-        return new Clothing(productDetails);
-      }
-      return new Product(productDetails);
-    });
+    setProducts(defaultProducts);
     if (typeof fun === 'function') {
       fun();
     }
@@ -119,7 +178,7 @@ export function loadProducts(fun) {
 }
 
 // Fallback local products list if backend fetch is offline or blocked
-const defaultProducts = [
+export const defaultProducts = [
   {
     id: "e43638ce-6aa0-4b85-b27f-e1d07eb678c6",
     image: "images/products/athletic-cotton-socks-6-pairs.jpg",

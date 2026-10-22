@@ -78,15 +78,15 @@ body.login-page {
 }
 
 .amazon-yellow-button {
-  border: 1px solid #fcd200;
-  background: #ffd814;
-  color: #0f1111;
+  border: 1px solid #0096D6;
+  background: #00A8E1;
+  color: #ffffff;
   font-weight: 700;
   box-shadow: 0 2px 5px rgba(213, 217, 217, 0.5);
 }
 
 .amazon-yellow-button:hover {
-  background: #f7ca00;
+  background: #0082B3;
 }
 
 .login-terms {

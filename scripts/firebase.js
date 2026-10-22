@@ -10,6 +10,7 @@ import {
   createUserWithEmailAndPassword,
   updateProfile
 } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
+import { getFirestore } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyBZSSJSKfClwCMHErjYoJ6dVJLTSyKLeuk',
@@ -24,6 +25,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
+export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
 export const facebookProvider = new FacebookAuthProvider();
 

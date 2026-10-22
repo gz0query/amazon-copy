@@ -12,6 +12,8 @@ export function renderPaymentSummary() {
 
    cart.forEach((cartItem) => {
      const product = getProduct(cartItem.productId);
+     if (!product) return;
+
      productPriceCents += product.priceCents * cartItem.quantity;
 
      const deliveryOption = getDeliveryOption(cartItem.deliveryOptionId);
@@ -22,7 +24,8 @@ export function renderPaymentSummary() {
    const taxCents = totalBeforeTaxCents * 0.1;
    const totalCents = totalBeforeTaxCents + taxCents;
    const totalCartQuantity = cart.reduce(
-     (total, cartItem) => total + cartItem.quantity,
+     (total, cartItem) =>
+       getProduct(cartItem.productId) ? total + cartItem.quantity : total,
      0
    );
    
@@ -36,35 +39,35 @@ export function renderPaymentSummary() {
        <div>Items (${totalCartQuantity}):</div>
        
     <div class="payment-summary-money">
- $${formatCurrency(productPriceCents)}</div>
+ ₦${formatCurrency(productPriceCents)}</div>
           </div>
 
      <div class="payment-summary-row">
     <div>Shipping &amp; handling:</div>
     
      <div class="payment-summary-money">
-  $${formatCurrency(shippingPriceCents)}
+  ₦${formatCurrency(shippingPriceCents)}
          </div>
           </div>
 
     <div class="payment-summary-row subtotal-row">
    <div>Total before tax:</div>
    <div class="payment-summary-money">
-  $${formatCurrency(totalBeforeTaxCents)}
+  ₦${formatCurrency(totalBeforeTaxCents)}
          </div>
           </div>
 
     <div class="payment-summary-row">
     <div>Estimated tax (10%):</div>
    <div class="payment-summary-money">
-  $${formatCurrency(taxCents)}
+  ₦${formatCurrency(taxCents)}
         </div>  
           </div>
 
     <div class="payment-summary-row total-row">
       <div>Order total:</div>
   <div class="payment-summary-money">
-    $${formatCurrency(totalCents)}</div>
+    ₦${formatCurrency(totalCents)}</div>
           </div>
 
   <button class="place-order-button button-primary js-place-order">
@@ -77,7 +80,7 @@ export function renderPaymentSummary() {
  .innerHTML = paymentSummaryHTML;
  
  document.querySelector('.js-place-order')
- .addEventListener('click', (event) => {
+ .addEventListener('click', async (event) => {
    if (cart.length === 0) {
      return;
    }
@@ -97,15 +100,17 @@ export function renderPaymentSummary() {
    };
 
    addOrder(order);
-   clearCart();
+   try {
+     await clearCart();
+   } catch (error) {
+     console.error('Could not clear the cart after placing the order.', error);
+     event.currentTarget.disabled = false;
+     return;
+   }
    window.location.href = 'orders.html';
  });
  
 }
-
-
-
-
 
 
 

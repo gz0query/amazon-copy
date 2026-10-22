@@ -40,22 +40,22 @@ input, select, button {
 }
 
 .button-primary {
-  color: rgb(33, 33, 33);
-  background-color: rgb(255, 216, 20);
-  border: 1px solid rgb(252, 210, 0);
+  color: #ffffff;
+  background-color: #00A8E1;
+  border: 1px solid #0096D6;
   border-radius: 8px;
   cursor: pointer;
   box-shadow: 0 2px 5px rgba(213, 217, 217, 0.5);
 }
 
 .button-primary:hover {
-  background-color: rgb(247, 202, 0);
-  border: 1px solid rgb(242, 194, 0);
+  background-color: #0082B3;
+  border: 1px solid #0096D6;
 }
 
 .button-primary:active {
-  background: rgb(255, 216, 20);
-  border-color: rgb(252, 210, 0);
+  background: #00A8E1;
+  border-color: #0096D6;
   box-shadow: none;
 }
 

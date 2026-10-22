@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#ffffff">
+    <title>Bypay Admin - Add Product</title>
+    <link rel="stylesheet" href="styles/shared/general.css">
+    <style>
+        body {
+            min-height: 100vh;
+            padding: 24px;
+            background: #f3f5f6;
+        }
+
+        #admin-container {
+            max-width: 1000px;
+            margin: 48px auto;
+            padding: 32px;
+            background: #ffffff;
+            border-top: 4px solid #00A8E1;
+            border-radius: 8px;
+            box-shadow: 0 4px 18px rgba(19, 25, 33, 0.1);
+        }
+
+        #admin-product-form {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        h2 {
+            margin: 0 0 24px;
+            color: #17212b;
+        }
+
+        .form-field {
+            display: grid;
+            gap: 7px;
+            margin-bottom: 18px;
+        }
+
+        .form-field label {
+            font-weight: 700;
+        }
+
+        .form-field input,
+        .form-field select {
+            width: 100%;
+            min-height: 42px;
+            padding: 9px 11px;
+            border: 1px solid #c8d0d5;
+            border-radius: 4px;
+            background: #ffffff;
+            font-size: 16px;
+        }
+
+        .form-field input:focus,
+        .form-field select:focus {
+            border-color: #00A8E1;
+            outline: 2px solid rgba(0, 168, 225, 0.2);
+        }
+
+        #image-preview-box {
+            display: block;
+            width: 100%;
+            max-height: 120px;
+            margin-top: 10px;
+            object-fit: contain;
+            object-position: center;
+            background: #ffffff;
+        }
+
+        #image-preview-box[hidden] {
+            display: none;
+        }
+
+        #admin-product-form button {
+            width: 100%;
+            min-height: 44px;
+            border: 0;
+            border-radius: 4px;
+            background: #00A8E1;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        #admin-product-form button:hover {
+            background: #008fbe;
+        }
+
+        #admin-form-message {
+            margin-top: 14px;
+            color: #167044;
+            font-weight: 700;
+        }
+
+        #admin-form-message.error {
+            color: #b42318;
+        }
+
+        #admin-inventory {
+            margin-top: 36px;
+            padding-top: 26px;
+            border-top: 1px solid #dce2e6;
+        }
+
+        #admin-inventory h3 {
+            margin: 0 0 16px;
+            color: #17212b;
+        }
+
+        #admin-search-input {
+            width: 100%;
+            min-height: 42px;
+            margin-bottom: 16px;
+            padding: 9px 11px;
+            border: 1px solid #c8d0d5;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        #admin-product-list {
+            display: grid !important;
+            grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)) !important;
+            gap: 16px !important;
+            margin-top: 16px;
+        }
+
+        .admin-product-row {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 14px;
+            border: 1px solid #e3e6e6;
+            border-radius: 8px;
+            background: #ffffff;
+        }
+
+        .admin-product-image {
+            width: 100%;
+            height: 130px;
+            margin-bottom: 10px;
+            object-fit: contain;
+            background: #ffffff;
+        }
+
+        .admin-product-name {
+            display: -webkit-box;
+            margin: 0 0 5px;
+            overflow-wrap: anywhere;
+            overflow: hidden;
+            font-size: 15px;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+        }
+
+        .admin-product-price {
+            margin-bottom: 7px;
+            color: #37434b;
+        }
+
+        .admin-stock-badge {
+            display: inline-block;
+            padding: 4px 7px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .admin-stock-badge.in-stock {
+            background: #e7f5ec;
+            color: #176b3a;
+        }
+
+        .admin-stock-badge.sold-out {
+            background: #fdebea;
+            color: #b42318;
+        }
+
+        .admin-product-actions {
+            display: flex;
+            margin-top: 14px;
+            gap: 8px;
+        }
+
+        .admin-product-actions button {
+            flex: 1;
+            min-height: 36px;
+            padding: 7px 10px;
+            border: 1px solid #c8d0d5;
+            border-radius: 4px;
+            background: #ffffff;
+            color: #17212b;
+            font-weight: 700;
+        }
+
+        .admin-product-actions .admin-delete-button {
+            border-color: #b42318;
+            background: #b42318;
+            color: #ffffff;
+        }
+
+        .admin-product-actions button:disabled {
+            cursor: wait;
+            opacity: 0.65;
+        }
+
+        .admin-list-message {
+            grid-column: 1 / -1;
+            padding: 18px 12px;
+            color: #52616b;
+            text-align: center;
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 16px;
+            }
+
+            #admin-container {
+                margin: 24px auto;
+                padding: 24px 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="admin-container" style="display: none;">
+        <h2>Bypay Admin - Add Product</h2>
+        <form id="admin-product-form">
+            <div class="form-field">
+                <label for="product-name">Product Name</label>
+                <input id="product-name" name="name" type="text" autocomplete="off" required>
+            </div>
+
+            <div class="form-field">
+                <label for="product-price">Price in Naira</label>
+                <input id="product-price" name="price" type="number" min="0" step="0.01" required>
+            </div>
+
+            <div class="form-field">
+                <label for="product-image">Image URL</label>
+                <input id="product-image" name="image" type="text" required>
+                <img id="image-preview-box" alt="Product image preview" hidden>
+            </div>
+
+            <div class="form-field">
+                <label for="product-rating">Rating</label>
+                <input id="product-rating" name="rating" type="number" min="1" max="5" step="0.5" required>
+            </div>
+
+            <div class="form-field">
+                <label for="product-category">Category</label>
+                <select id="product-category" name="category" required>
+                    <option value="" selected disabled>Select a category</option>
+                    <option value="Clothing">Clothing</option>
+                    <option value="Electronics">Electronics</option>
+                    <option value="Home">Home</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+
+            <div class="form-field">
+                <label for="product-stock">Stock Status</label>
+                <select id="product-stock" name="inStock" required>
+                    <option value="true">In Stock (Available)</option>
+                    <option value="false">Sold Out (Unavailable)</option>
+                </select>
+            </div>
+
+            <button type="submit">Add Product</button>
+            <p id="admin-form-message" role="status" aria-live="polite" hidden></p>
+        </form>
+
+        <section id="admin-inventory" aria-labelledby="admin-inventory-title">
+            <h3 id="admin-inventory-title">Manage All Store Products (<span id="admin-product-count">0</span>)</h3>
+            <input id="admin-search-input" type="search" placeholder="Search products by name..."
+                aria-label="Search products by name">
+            <div id="admin-product-list" aria-live="polite"></div>
+        </section>
+    </div>
+
+    <script type="module" src="scripts/admin.js"></script>
+</body>
+
+</html>

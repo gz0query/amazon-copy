@@ -1,8 +1,8 @@
 import { renderOrderSummary } from './checkout/orderSummary.js';
 import { renderPaymentSummary } from './checkout/paymentSummary.js';
-import { loadProductsFetch } from '../data/products.js';
+import { loadProductsFetch, loadFirestoreProducts } from '../data/products.js';
 import { setCartUser } from '../data/cart.js';
-import { setOrdersUser } from '../data/orders.js';
+import { setOrdersUser, syncUserDataFromCloud } from '../data/orders.js';
 import { auth, onAuthStateChanged } from './firebase.js';
 
 onAuthStateChanged(auth, async (user) => {
@@ -15,7 +15,9 @@ onAuthStateChanged(auth, async (user) => {
   setOrdersUser(user.uid);
 
   try {
+    await syncUserDataFromCloud(user);
     await loadProductsFetch();
+    await loadFirestoreProducts();
     renderOrderSummary();
     renderPaymentSummary();
   } catch (error) {
@@ -77,8 +79,6 @@ loadProducts(() => {
    }); 
 });
 */
-
-
 
 
 

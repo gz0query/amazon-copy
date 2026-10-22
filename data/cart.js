@@ -1,5 +1,7 @@
-   
- export let cart;
+import { doc, setDoc } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
+import { auth, db } from '../scripts/firebase.js';
+
+export let cart;
  let activeUserId = 'guest';
 
  loadFromStorage();
@@ -18,8 +20,22 @@
    loadFromStorage();
  }
 
+export function setCartFromCloud(cartData) {
+  cart = cartData;
+  localStorage.setItem(`cart_${activeUserId}`, JSON.stringify(cart));
+}
+
  function saveToStorage() {
    localStorage.setItem(`cart_${activeUserId}`, JSON.stringify(cart));
+
+   if (auth.currentUser) {
+     setDoc(doc(db, 'users', auth.currentUser.uid), {
+       cart,
+       cartUpdatedAt: new Date().toISOString()
+     }, { merge: true }).catch((error) => {
+       console.error('Could not save cart to Firestore.', error);
+     });
+   }
  }
   
   export function addToCart(productId, quantity = 1) {
@@ -60,9 +76,18 @@ export function removeFromCart(productId) {
     saveToStorage();
  }
 
-export function clearCart() {
-  cart = [];
-  saveToStorage();
+export async function clearCart() {
+  cart.length = 0;
+  localStorage.setItem('cart', JSON.stringify([]));
+  localStorage.setItem(`cart_${activeUserId}`, JSON.stringify([]));
+  localStorage.setItem('cartClearedAt', String(Date.now()));
+
+  if (auth.currentUser) {
+    await setDoc(doc(db, 'users', auth.currentUser.uid), {
+      cart: [],
+      cartUpdatedAt: new Date().toISOString()
+    }, { merge: true });
+  }
 }
 
 export function updateQuantity(productId, quantity) {

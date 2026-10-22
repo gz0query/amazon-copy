@@ -1,11 +1,12 @@
 import { orders, setOrdersUser } from '../data/orders.js';
-import { getProduct, loadProducts } from '../data/products.js';
+import { getProduct, loadProducts, loadFirestoreProducts } from '../data/products.js';
 import { getDeliveryOption } from '../data/deliveryOptions.js';
 import { formatCurrency } from './utils/money.js';
 import { cart, addToCart, setCartUser } from '../data/cart.js';
+import { syncUserDataFromCloud } from '../data/orders.js';
 import { auth, onAuthStateChanged } from './firebase.js';
 
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
   if (!user) {
     window.location.replace('index.html');
     return;
@@ -13,8 +14,16 @@ onAuthStateChanged(auth, (user) => {
 
   setOrdersUser(user.uid);
   setCartUser(user.uid);
-  updateCartQuantity();
-  loadProducts(renderOrders);
+
+  try {
+    await syncUserDataFromCloud(user);
+    updateCartQuantity();
+    await new Promise((resolve) => loadProducts(resolve));
+    await loadFirestoreProducts();
+    renderOrders();
+  } catch (error) {
+    console.error('Could not load orders and product data.', error);
+  }
 });
 
 function updateCartQuantity() {
@@ -51,6 +60,8 @@ function renderOrders() {
 
     const itemsHTML = orderItems.map((item) => {
       const product = getProduct(item.productId);
+      if (!product) return '';
+
       const arrivalDate = formatArrivalDate(order, item);
 
       return `
@@ -91,7 +102,7 @@ function renderOrders() {
             </div>
             <div class="order-total">
               <div class="order-header-label">Total:</div>
-              <div>$${formatCurrency(order.totalCostCents)}</div>
+              <div>₦${formatCurrency(order.totalCostCents)}</div>
             </div>
           </div>
           <div class="order-header-right-section">

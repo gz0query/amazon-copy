@@ -17,6 +17,8 @@ export function renderOrderSummary() {
 
   cart.forEach((cartItem) => {
     const matchingProduct = getProduct(cartItem.productId);
+    if (!matchingProduct) return;
+
     const deliveryOption = getDeliveryOption(cartItem.deliveryOptionId);
     const deliveryDate = dayjs().add(deliveryOption.deliveryDays, 'days');
     const dateString = deliveryDate.format('dddd, MMMM D');
@@ -29,7 +31,7 @@ export function renderOrderSummary() {
           <div class="cart-item-details">
             <div class="product-name">${matchingProduct.name}</div>
             <div class="product-price">
-              $${formatCurrency(matchingProduct.priceCents * cartItem.quantity)}
+              ₦${formatCurrency(matchingProduct.priceCents * cartItem.quantity)}
             </div>
             <div class="product-quantity js-product-quantity-${matchingProduct.id}">
               <span>Quantity: <span class="quantity-label">${cartItem.quantity}</span></span>
@@ -58,7 +60,8 @@ export function renderOrderSummary() {
   orderSummaryElement.innerHTML = cartSummaryHTML;
 
   const totalCartQuantity = cart.reduce(
-    (total, cartItem) => total + cartItem.quantity,
+    (total, cartItem) =>
+      getProduct(cartItem.productId) ? total + cartItem.quantity : total,
     0
   );
   const itemCountElement = document.querySelector('.js-return-to-home-link');
@@ -137,7 +140,7 @@ function deliveryOptionsHTML(matchingProduct, cartItem) {
     const dateString = deliveryDate.format('dddd, MMMM D');
     const priceString = deliveryOption.priceCents === 0
       ? 'FREE'
-      : `$${formatCurrency(deliveryOption.priceCents)} -`;
+      : `₦${formatCurrency(deliveryOption.priceCents)} -`;
     const isChecked = deliveryOption.id === cartItem.deliveryOptionId;
 
     return `
@@ -158,9 +161,6 @@ function deliveryOptionsHTML(matchingProduct, cartItem) {
     `;
   }).join('');
 }
-
-
-
 
 
 

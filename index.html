@@ -5,7 +5,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#ffffff">
-  <title>Sign in to Amazon</title>
+  <title>Sign in to Bypay</title>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,8 +17,8 @@
 
 <body class="login-page">
   <main class="login-shell">
-    <a class="login-logo-link" href="index.html" aria-label="Amazon home">
-      <img class="login-logo" src="images/amazon-logo.png" alt="Amazon">
+    <a class="login-logo-link" href="index.html" aria-label="Bypay home">
+      <img class="login-logo" src="images/bypay-logo.png" alt="Bypay logo">
     </a>
 
     <section class="login-card" aria-labelledby="login-title">
@@ -42,13 +43,17 @@
             autocomplete="current-password"
             required>
 
+          <div style="text-align: right; margin: 6px 0 14px 0;">
+            <a href="forgot-password.html" id="forgot-password-link" style="color: #00A8E1; font-size: 13px; font-weight: 600; text-decoration: none;">Forgot Password?</a>
+          </div>
+
           <button class="amazon-yellow-button" id="btn-signin" type="submit">
             Sign in
           </button>
         </form>
 
         <p class="login-terms">
-          By continuing, you agree to Amazon's Conditions of Use and Privacy Notice.
+          By continuing, you agree to Bypay's Conditions of Use and Privacy Notice.
         </p>
 
         <div class="login-divider"><span>or continue with</span></div>
@@ -71,9 +76,9 @@
         </div>
 
         <div class="new-account-section">
-          <div class="new-account-divider"><span>New to Amazon?</span></div>
+          <div class="new-account-divider"><span>New to Bypay?</span></div>
           <button class="create-account-link" id="show-signup" type="button">
-            Create your Amazon account
+            Create your Bypay account
           </button>
         </div>
       </section>
@@ -108,7 +113,7 @@
           <small class="password-hint">Passwords must be at least 6 characters.</small>
 
           <button class="amazon-yellow-button" id="btn-signup" type="submit">
-            Create your Amazon account
+            Create your Bypay account
           </button>
         </form>
 
@@ -136,10 +141,34 @@
           <button id="show-signin" type="button">Sign in</button>
         </p>
       </section>
+
+      <section id="signup-otp-view" class="auth-panel" hidden>
+        <h1>Verify Your Email</h1>
+        <p>Enter the 6-digit code sent to <strong id="signup-otp-email"></strong>.</p>
+        <label class="login-field" for="signup-otp-input">6-digit code</label>
+        <input
+          class="login-input"
+          id="signup-otp-input"
+          type="text"
+          inputmode="numeric"
+          autocomplete="one-time-code"
+          maxlength="6"
+          pattern="[0-9]{6}"
+          required>
+        <button class="amazon-yellow-button" id="btn-confirm-signup-otp" type="button">
+          Verify Code
+        </button>
+        <button class="create-account-link" id="btn-resend-signup-otp" type="button">
+          Resend Code
+        </button>
+        <p class="back-to-signin">
+          <button id="signup-change-email" type="button">Change email</button>
+        </p>
+      </section>
     </section>
 
     <footer class="login-footer">
-      <a href="index.html">Back to Amazon</a>
+      <a href="index.html">Back to Bypay</a>
     </footer>
   </main>
 

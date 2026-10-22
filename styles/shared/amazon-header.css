@@ -17,6 +17,33 @@
 
 .amazon-header-left-section {
   flex: 0 0 180px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hamburger-menu {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.hamburger-menu:hover {
+  outline: 1px solid white;
+}
+
+.hamburger-menu svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 2;
 }
 
 .header-link {
@@ -76,7 +103,7 @@
 }
 
 .search-button {
-  background-color: rgb(254, 189, 105);
+  background-color: #00A8E1;
   border: none;
   width: 45px;
   height: 40px;
@@ -114,6 +141,15 @@
   font-size: 13px;
   line-height: 1.2;
   white-space: nowrap;
+}
+
+.account-greeting-row {
+  display: flex;
+  align-items: center;
+}
+
+.header-profile-avatar {
+  flex: 0 0 35px;
 }
 
 .header-bold {
@@ -189,16 +225,124 @@
 }
 
 .cart-quantity {
-  color: rgb(240, 136, 4);
+  color: #00A8E1;
   font-size: 16px;
   font-weight: 700;
 
   position: absolute;
   top: 4px;
   left: 22px;
-  
+
   width: 26px;
   text-align: center;
+}
+
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.sidebar-menu {
+  position: fixed;
+  top: 0;
+  left: -350px;
+  width: 300px;
+  max-width: 85vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: white;
+  z-index: 1001;
+  transition: left 0.3s ease;
+  box-shadow: 4px 0 15px rgba(0, 0, 0, 0.2);
+}
+
+.sidebar-menu.active {
+  left: 0;
+}
+
+.sidebar-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 64px;
+  padding: 12px 18px;
+  background: #00A8E1;
+  color: white;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.sidebar-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 6px;
+  border: 0;
+  background: transparent;
+  color: white;
+  cursor: pointer;
+}
+
+.sidebar-close svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 2;
+}
+
+.sidebar-nav {
+  flex: 1;
+  min-height: 0;
+  padding: 0;
+}
+
+.sidebar-links {
+  list-style: none;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 12px 20px;
+  color: #333;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.sidebar-link svg {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.sidebar-link:hover,
+.sidebar-link:hover svg {
+  color: #00A8E1;
 }
 
 @media (max-width: 768px) {
@@ -214,6 +358,17 @@
   .amazon-header-left-section {
     flex: 0 1 auto;
     order: 1;
+  }
+
+  .hamburger-menu {
+    width: 32px;
+    height: 34px;
+    flex-basis: 32px;
+  }
+
+  .hamburger-menu svg {
+    width: 22px;
+    height: 22px;
   }
 
   .amazon-logo {
@@ -300,5 +455,80 @@
 
   .cart-text {
     margin-top: 9px;
+  }
+}
+
+@media (max-width: 576px) {
+
+  /* Hide unnecessary text links on mobile */
+  .orders-link,
+  .account-text {
+    display: none !important;
+  }
+
+  .cart-text {
+    display: none !important;
+  }
+
+  /* Protect the left section (Hamburger + Logo) from being overlapped */
+  .amazon-header-left-section {
+    flex-shrink: 0 !important;
+    margin-right: auto !important;
+  }
+
+  /* Right section rules: Force it to stay within its side of the screen */
+  .amazon-header-right-section {
+    display: flex !important;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px !important;
+    flex-shrink: 1 !important;
+    min-width: 0 !important;
+    max-width: calc(100vw - 140px) !important;
+    /* The invisible wall protecting the logo */
+  }
+
+  /* Ensure the profile link container can shrink */
+  .header-profile-link {
+    display: flex !important;
+    align-items: center;
+    gap: 6px !important;
+    min-width: 0 !important;
+    flex-shrink: 1 !important;
+  }
+
+  /* Force the text to take the hit and truncate (e.g. "Hello, Gzo...") */
+  .header-profile-text {
+    display: flex !important;
+    flex-shrink: 1 !important;
+    min-width: 0 !important;
+  }
+
+  .hello-prefix {
+    display: none !important;
+  }
+
+  .greeting-text {
+    font-size: 13px !important;
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 75px !important;
+    /* Aggressive truncation limit */
+  }
+
+  /* Protect Avatar and Cart from shrinking */
+  .header-profile-avatar,
+  .cart-link {
+    flex-shrink: 0 !important;
+  }
+}
+
+@media (max-width: 329px) {
+
+  /* On ultra-tiny screens, completely hide the greeting text to protect the logo */
+  .header-profile-text {
+    display: none !important;
   }
 }
