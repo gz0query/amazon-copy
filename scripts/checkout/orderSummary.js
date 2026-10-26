@@ -3,9 +3,10 @@ import {
   cart,
   removeFromCart,
   updateDeliveryOption,
-  updateQuantity
+  updateQuantity,
+  sanitizeCart
 } from '../../data/cart.js';
-import {getProduct} from '../../data/products.js';
+import {getProduct, products} from '../../data/products.js';
 import {formatCurrency} from '../utils/money.js';
 import {hello} from 'https://unpkg.com/supersimpledev@1.0.1/hello.esm.js';
 import dayjs from  'https://unpkg.com/dayjs@1.11.10/esm/index.js';
@@ -13,13 +14,15 @@ import {deliveryOptions, getDeliveryOption} from '../../data/deliveryOptions.js'
 import {renderPaymentSummary} from './paymentSummary.js';
 
 export function renderOrderSummary() {
+  sanitizeCart(new Set(products.map((product) => String(product.id))));
   let cartSummaryHTML = '';
 
   cart.forEach((cartItem) => {
     const matchingProduct = getProduct(cartItem.productId);
     if (!matchingProduct) return;
 
-    const deliveryOption = getDeliveryOption(cartItem.deliveryOptionId);
+    const deliveryOption =
+      getDeliveryOption(cartItem.deliveryOptionId) || getDeliveryOption('1');
     const deliveryDate = dayjs().add(deliveryOption.deliveryDays, 'days');
     const dateString = deliveryDate.format('dddd, MMMM D');
 
@@ -161,7 +164,6 @@ function deliveryOptionsHTML(matchingProduct, cartItem) {
     `;
   }).join('');
 }
-
 
 
 

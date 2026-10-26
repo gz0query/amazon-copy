@@ -30,7 +30,8 @@
       </button>
     </div>
     <nav class="sidebar-nav" aria-label="Store navigation">
-      <ul class="sidebar-links" style="display: flex; flex-direction: column; flex-grow: 1; margin: 0; padding: 0; height: calc(100vh - 70px);">
+      <ul class="sidebar-links"
+        style="display: flex; flex-direction: column; flex-grow: 1; margin: 0; padding: 0; height: calc(100vh - 70px);">
         <li>
           <a class="sidebar-link" href="profile.html">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -61,7 +62,8 @@
         </li>
         <li id="sidebar-admin-portal" style="display: none;">
           <a href="admin.html" style="color: #00A8E1; font-weight: 600; display: flex; align-items: center; gap: 12px;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00A8E1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00A8E1" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
               <rect x="3" y="3" width="7" height="7"></rect>
               <rect x="14" y="3" width="7" height="7"></rect>
               <rect x="14" y="14" width="7" height="7"></rect>
@@ -70,7 +72,14 @@
             Admin Portal
           </a>
         </li>
-        <li style="margin-top: auto; border-top: 1px solid #eee;"><a href="#" id="sidebar-logout" style="color: #d9534f; font-weight: bold; padding: 15px 20px; display: flex; align-items: center; gap: 12px; text-decoration: none;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d9534f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg> Logout</a></li>
+        <li style="margin-top: auto; border-top: 1px solid #eee;"><a href="#" id="sidebar-logout"
+            style="color: #d9534f; font-weight: bold; padding: 15px 20px; display: flex; align-items: center; gap: 12px; text-decoration: none;"><svg
+              width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d9534f" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg> Logout</a></li>
       </ul>
     </nav>
   </aside>
@@ -78,14 +87,8 @@
   <!-- Top Navigation Header -->
   <header class="amazon-header">
     <div class="amazon-header-left-section">
-      <div
-        class="hamburger-menu"
-        id="hamburger-icon"
-        role="button"
-        tabindex="0"
-        aria-label="Open navigation menu"
-        aria-controls="sidebar-menu"
-        aria-expanded="false">
+      <div class="hamburger-menu" id="hamburger-icon" role="button" tabindex="0" aria-label="Open navigation menu"
+        aria-controls="sidebar-menu" aria-expanded="false">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M3 6h18M3 12h18M3 18h18"></path>
         </svg>
@@ -105,11 +108,16 @@
 
     <div class="amazon-header-right-section">
       <div class="account-container" id="account-container">
-        <a class="header-link header-profile-link" id="account-toggle" href="profile.html" style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: white !important;">
-          <img class="header-profile-avatar" id="header-avatar" src="https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png" alt="Profile" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 1px solid #ccc;">
+        <a class="header-link header-profile-link" id="account-toggle" href="profile.html"
+          style="display: flex; align-items: center; gap: 8px; text-decoration: none; color: white !important;">
+          <img class="header-profile-avatar" id="header-avatar"
+            src="https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png" alt="Profile"
+            style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 1px solid #ccc;">
           <div class="header-profile-text" style="display: flex; flex-direction: column; align-items: flex-start;">
-            <span class="greeting-text" id="user-greeting" style="font-size: 12px; line-height: 14px;"><span class="hello-prefix">Hello, </span><span class="first-name-only">Goodluck</span></span>
-            <span class="account-text" style="font-size: 14px; font-weight: 700; line-height: 15px;">Account &amp; Lists</span>
+            <span class="greeting-text" id="user-greeting" style="font-size: 12px; line-height: 14px;"><span
+                class="hello-prefix">Hello, </span><span class="first-name-only">Goodluck</span></span>
+            <span class="account-text" style="font-size: 14px; font-weight: 700; line-height: 15px;">Account &amp;
+              Lists</span>
           </div>
         </a>
 
@@ -142,6 +150,7 @@
 
   <!-- Main JavaScript Module Entry Point -->
   <script type="module" src="scripts/amazon.js"></script>
+  <script type="module" src="scripts/chatbot.js"></script>
 </body>
 
 </html>

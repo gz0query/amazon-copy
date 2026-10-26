@@ -1,5 +1,6 @@
 import { cart, setCartUser } from '../data/cart.js';
-import { doc, onSnapshot, setDoc } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
+import { doc, setDoc } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
+import { syncUserDataFromCloud } from '../data/orders.js';
 import { auth, db, onAuthStateChanged, signOut } from './firebase.js';
 
 const profileName = document.querySelector('#profile-name');
@@ -33,7 +34,9 @@ function setSidebarOpen(isOpen) {
 
 function updateCartQuantity() {
   const quantity = cart.reduce((total, item) => total + item.quantity, 0);
-  document.querySelector('.js-cart-quantity').textContent = quantity;
+  document.querySelectorAll('.js-cart-quantity, .cart-quantity').forEach((badge) => {
+    badge.textContent = quantity;
+  });
 }
 
 hamburgerIcon.addEventListener('click', () => setSidebarOpen(true));
@@ -46,6 +49,17 @@ hamburgerIcon.addEventListener('keydown', (event) => {
 
 sidebarClose.addEventListener('click', () => setSidebarOpen(false));
 sidebarOverlay.addEventListener('click', () => setSidebarOpen(false));
+window.addEventListener('bypay-cart-updated', updateCartQuantity);
+window.addEventListener('bypay-user-updated', (event) => {
+  photoBase64 = event.detail.userData.photoBase64 || currentUser?.photoURL || '';
+});
+window.addEventListener('pageshow', () => {
+  if (auth.currentUser) {
+    setCartUser(auth.currentUser.uid);
+  }
+  updateCartQuantity();
+});
+window.addEventListener('storage', updateCartQuantity);
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') {
     setSidebarOpen(false);
@@ -202,32 +216,7 @@ onAuthStateChanged(auth, (user) => {
 
   setCartUser(user.uid);
   updateCartQuantity();
-
-  onSnapshot(doc(db, 'users', user.uid), (profileSnapshot) => {
-    if (!profileSnapshot.exists()) {
-      return;
-    }
-
-    const profile = profileSnapshot.data();
-    const savedName = profile.name || profile.fullName || profile.displayName;
-    const displayName = savedName || user.displayName || user.email?.split('@')[0] || 'User';
-    const firstName = (displayName || 'User').trim().split(/\s+/)[0];
-    if (typeof savedName === 'string' && savedName) {
-      profileName.value = savedName;
-    }
-    updateHeaderGreeting(firstName);
-    document.querySelector('#sidebar-name').textContent = `Hello, ${firstName}`;
-    document.querySelector('#profile-phone').value = profile.phone || '';
-    document.querySelector('#profile-address').value = profile.address || '';
-    if (typeof profile.photoBase64 === 'string' && profile.photoBase64) {
-      photoBase64 = profile.photoBase64;
-      profileAvatar.src = photoBase64;
-      const headerAvatar = document.getElementById('header-avatar');
-      if (headerAvatar) {
-        headerAvatar.src = profile.photoBase64;
-      }
-    }
-  }, (error) => {
+  syncUserDataFromCloud(user).catch((error) => {
     console.error('Could not load profile from Firestore.', error);
     showProfileMessage('Could not load saved profile details.', true);
   });

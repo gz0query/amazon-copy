@@ -1,12 +1,32 @@
 import { orders, setOrdersUser } from '../data/orders.js';
-import { getProduct, loadProducts, loadFirestoreProducts } from '../data/products.js';
+import { getProduct, products, startRealtimeProductsSync } from '../data/products.js';
 import { getDeliveryOption } from '../data/deliveryOptions.js';
 import { formatCurrency } from './utils/money.js';
-import { cart, addToCart, setCartUser } from '../data/cart.js';
+import { cart, addToCart, setCartUser, sanitizeCart, loadFromStorage } from '../data/cart.js';
 import { syncUserDataFromCloud } from '../data/orders.js';
 import { auth, onAuthStateChanged } from './firebase.js';
 
-onAuthStateChanged(auth, async (user) => {
+updateCartQuantity();
+renderOrders();
+startRealtimeProductsSync(renderOrders);
+window.addEventListener('bypay-cart-updated', updateCartQuantity);
+window.addEventListener('bypay-orders-updated', renderOrders);
+window.addEventListener('pageshow', () => {
+  if (auth.currentUser) {
+    setOrdersUser(auth.currentUser.uid);
+    setCartUser(auth.currentUser.uid);
+  }
+  loadFromStorage();
+  updateCartQuantity();
+  renderOrders();
+});
+window.addEventListener('storage', () => {
+  loadFromStorage();
+  updateCartQuantity();
+  renderOrders();
+});
+
+onAuthStateChanged(auth, (user) => {
   if (!user) {
     window.location.replace('index.html');
     return;
@@ -14,21 +34,19 @@ onAuthStateChanged(auth, async (user) => {
 
   setOrdersUser(user.uid);
   setCartUser(user.uid);
+  sanitizeCart(new Set(products.map((product) => String(product.id))));
+  updateCartQuantity();
+  renderOrders();
 
-  try {
-    await syncUserDataFromCloud(user);
-    updateCartQuantity();
-    await new Promise((resolve) => loadProducts(resolve));
-    await loadFirestoreProducts();
-    renderOrders();
-  } catch (error) {
-    console.error('Could not load orders and product data.', error);
-  }
+  syncUserDataFromCloud(user).catch((error) => {
+    console.error('Could not refresh orders and product data.', error);
+  });
 });
 
 function updateCartQuantity() {
+  sanitizeCart(new Set(products.map((product) => String(product.id))));
   const cartQuantity = cart.reduce(
-    (total, cartItem) => total + cartItem.quantity,
+    (total, cartItem) => total + (getProduct(cartItem.productId) ? cartItem.quantity : 0),
     0
   );
   const cartQuantityElement = document.querySelector('.js-cart-quantity');

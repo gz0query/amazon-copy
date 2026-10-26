@@ -1,21 +1,15 @@
-import { cart, addToCart, setCartUser } from '../data/cart.js';
+import { cart, addToCart, setCartUser, sanitizeCart, loadFromStorage } from '../data/cart.js';
 import { setOrdersUser, syncUserDataFromCloud } from '../data/orders.js';
-import { products, loadProducts, setProducts } from '../data/products.js';
+import { products, getProduct, startRealtimeProductsSync } from '../data/products.js';
 import { formatCurrency } from './utils/money.js';
-import {
-  collection,
-  doc,
-  onSnapshot
-} from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
-import { auth, db, signOut, onAuthStateChanged } from './firebase.js';
+import { auth, signOut, onAuthStateChanged } from './firebase.js';
 
-let baseProducts = [];
 let searchQuery = '';
-let isProductsListenerStarted = false;
 
 function updateCartQuantity() {
+  sanitizeCart(new Set(products.map((product) => String(product.id))));
   const cartQuantity = cart.reduce(
-    (total, cartItem) => total + cartItem.quantity,
+    (total, cartItem) => total + (getProduct(cartItem.productId) ? cartItem.quantity : 0),
     0
   );
 
@@ -103,8 +97,8 @@ function renderProductsGrid(searchQuery = '') {
         </div>
 
         ${isSoldOut
-          ? '<button class="add-to-cart-button button-primary sold-out-button" disabled>Sold Out</button>'
-          : `<button
+        ? '<button class="add-to-cart-button button-primary sold-out-button" disabled>Sold Out</button>'
+        : `<button
               class="add-to-cart-button button-primary js-add-to-cart"
               data-product-id="${product.id}">
               Add to Cart
@@ -173,60 +167,6 @@ function updateHeaderGreeting(firstName) {
   });
 }
 
-function startProductsListener() {
-  if (isProductsListenerStarted) {
-    return;
-  }
-
-  isProductsListenerStarted = true;
-  onSnapshot(collection(db, 'products'), (snapshot) => {
-    const nextProducts = new Map(baseProducts.map((product) => [String(product.id), product]));
-    const customProducts = [];
-    const deletedProductIds = new Set();
-
-    snapshot.docs.forEach((productDocument) => {
-      const data = productDocument.data();
-      const documentId = String(productDocument.id);
-      const productId = String(data.id || documentId);
-      const matchingDefaultId = nextProducts.has(documentId)
-        ? documentId
-        : nextProducts.has(productId)
-          ? productId
-          : null;
-
-      if (data.deleted === true) {
-        deletedProductIds.add(documentId);
-        deletedProductIds.add(productId);
-        return;
-      }
-
-      if (matchingDefaultId) {
-        nextProducts.set(matchingDefaultId, {
-          ...nextProducts.get(matchingDefaultId),
-          ...data,
-          id: matchingDefaultId
-        });
-      } else {
-        customProducts.push({
-          ...data,
-          id: documentId
-        });
-      }
-    });
-
-    const displayedProducts = [
-      ...customProducts,
-      ...Array.from(nextProducts.values()).filter((product) =>
-        !deletedProductIds.has(String(product.id))
-      )
-    ];
-    setProducts(displayedProducts);
-    renderProductsGrid(searchQuery);
-  }, (error) => {
-    console.error('Could not listen for Firestore product updates.', error);
-  });
-}
-
 hamburgerIcon.addEventListener('click', () => setSidebarOpen(true));
 hamburgerIcon.addEventListener('keydown', (event) => {
   if (event.key === 'Enter' || event.key === ' ') {
@@ -240,6 +180,44 @@ document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') {
     setSidebarOpen(false);
   }
+});
+
+function initializeSearchEvents() {
+  if (searchEventsInitialized) {
+    return;
+  }
+  searchEventsInitialized = true;
+
+  searchInput.addEventListener('input', () => {
+    searchQuery = searchInput.value;
+    renderProductsGrid(searchQuery);
+  });
+
+  searchButton.addEventListener('click', () => {
+    searchQuery = searchInput.value;
+    renderProductsGrid(searchQuery);
+  });
+
+  searchInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      searchQuery = searchInput.value;
+      renderProductsGrid(searchQuery);
+    }
+  });
+}
+
+renderProductsGrid();
+updateCartQuantity();
+startRealtimeProductsSync(() => renderProductsGrid(searchQuery));
+initializeSearchEvents();
+window.addEventListener('bypay-cart-updated', updateCartQuantity);
+window.addEventListener('pageshow', () => {
+  loadFromStorage();
+  renderProductsGrid(searchQuery);
+});
+window.addEventListener('storage', () => {
+  renderProductsGrid(searchQuery);
 });
 
 onAuthStateChanged(auth, async (user) => {
@@ -261,24 +239,6 @@ onAuthStateChanged(auth, async (user) => {
   updateHeaderGreeting(firstName);
   sidebarName.textContent = `Hello, ${firstName}`;
 
-  onSnapshot(doc(db, 'users', user.uid), (userDoc) => {
-    if (userDoc.exists()) {
-      const profile = userDoc.data();
-      const savedName = profile.name || profile.fullName || profile.displayName;
-      const displayName = savedName || user.displayName || user.email?.split('@')[0] || 'User';
-      const firstName = (displayName || 'User').trim().split(/\s+/)[0];
-      updateHeaderGreeting(firstName);
-      sidebarName.textContent = `Hello, ${firstName}`;
-
-      const headerAvatar = document.getElementById('header-avatar');
-      if (headerAvatar && typeof profile.photoBase64 === 'string' && profile.photoBase64) {
-        headerAvatar.src = profile.photoBase64;
-      }
-    }
-  }, (error) => {
-    console.error('Could not listen for saved profile updates.', error);
-  });
-
   if (initializedUserId === user.uid) {
     return;
   }
@@ -286,17 +246,20 @@ onAuthStateChanged(auth, async (user) => {
 
   setCartUser(user.uid);
   setOrdersUser(user.uid);
-  try {
-    await syncUserDataFromCloud(user);
-    updateCartQuantity();
-  } catch (error) {
-    console.error('Could not restore user data from Firestore.', error);
-    updateCartQuantity();
-  }
-
-    accountMenu.addEventListener('click', (event) => {
-      event.stopPropagation();
+  updateCartQuantity();
+  syncUserDataFromCloud(user)
+    .then(() => {
+      updateCartQuantity();
+      renderProductsGrid(searchQuery);
+    })
+    .catch((error) => {
+      console.error('Could not restore user data from Firestore.', error);
+      updateCartQuantity();
     });
+
+  accountMenu.addEventListener('click', (event) => {
+    event.stopPropagation();
+  });
 
   document.addEventListener('click', (event) => {
     if (!accountContainer.contains(event.target)) {
@@ -320,31 +283,4 @@ onAuthStateChanged(auth, async (user) => {
     }).catch((error) => console.error('Logout failed:', error));
   });
 
-  if (!searchEventsInitialized) {
-    searchEventsInitialized = true;
-    searchInput.addEventListener('input', () => {
-      searchQuery = searchInput.value;
-      renderProductsGrid(searchQuery);
-    });
-
-    searchButton.addEventListener('click', () => {
-      searchQuery = searchInput.value;
-      renderProductsGrid(searchQuery);
-    });
-
-    searchInput.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter') {
-        event.preventDefault();
-        searchQuery = searchInput.value;
-        renderProductsGrid(searchQuery);
-      }
-    });
-  }
-
-  if (!isProductsListenerStarted) {
-    loadProducts(() => {
-      baseProducts = [...products];
-      startProductsListener();
-    });
-  }
 });

@@ -1,7 +1,7 @@
 import { orders, setOrdersUser } from '../data/orders.js';
-import { getProduct, loadProducts, loadFirestoreProducts } from '../data/products.js';
+import { getProduct, products, startRealtimeProductsSync } from '../data/products.js';
 import { getDeliveryOption } from '../data/deliveryOptions.js';
-import { cart, setCartUser } from '../data/cart.js';
+import { cart, setCartUser, sanitizeCart, loadFromStorage } from '../data/cart.js';
 import { syncUserDataFromCloud } from '../data/orders.js';
 import { auth, onAuthStateChanged } from './firebase.js';
 
@@ -9,7 +9,24 @@ const searchParams = new URL(window.location.href).searchParams;
 const orderId = searchParams.get('orderId');
 const productId = searchParams.get('productId');
 
-onAuthStateChanged(auth, async (user) => {
+renderTrackingPage(false);
+startRealtimeProductsSync(renderTrackingPage);
+window.addEventListener('bypay-cart-updated', renderTrackingPage);
+window.addEventListener('bypay-orders-updated', renderTrackingPage);
+window.addEventListener('pageshow', () => {
+  if (auth.currentUser) {
+    setOrdersUser(auth.currentUser.uid);
+    setCartUser(auth.currentUser.uid);
+  }
+  loadFromStorage();
+  renderTrackingPage();
+});
+window.addEventListener('storage', () => {
+  loadFromStorage();
+  renderTrackingPage();
+});
+
+onAuthStateChanged(auth, (user) => {
   if (!user) {
     window.location.replace('index.html');
     return;
@@ -17,43 +34,53 @@ onAuthStateChanged(auth, async (user) => {
 
   setOrdersUser(user.uid);
   setCartUser(user.uid);
+  renderTrackingPage();
 
-  try {
-    await syncUserDataFromCloud(user);
-    const cartQuantity = cart.reduce(
-      (total, cartItem) => total + cartItem.quantity,
-      0
-    );
-    document.querySelector('.js-cart-quantity').textContent = cartQuantity;
-    await new Promise((resolve) => loadProducts(resolve));
-    await loadFirestoreProducts();
-    renderTracking();
-  } catch (error) {
-    console.error('Could not load tracking and product data.', error);
-  }
+  syncUserDataFromCloud(user).catch((error) => {
+    console.error('Could not refresh tracking and product data.', error);
+  });
 });
 
-function renderTracking() {
+function renderTrackingPage(showErrors = true) {
+  sanitizeCart(new Set(products.map((product) => String(product.id))));
+  const cartQuantity = cart.reduce(
+    (total, cartItem) => total + (getProduct(cartItem.productId) ? cartItem.quantity : 0),
+    0
+  );
+  const cartQuantityElement = document.querySelector('.js-cart-quantity');
+  if (cartQuantityElement) {
+    cartQuantityElement.textContent = cartQuantity;
+  }
+  renderTracking(showErrors);
+}
+
+function renderTracking(showErrors) {
   const trackingContainer = document.querySelector('.js-order-tracking');
   const order = orders.find(
     (savedOrder) => (savedOrder.orderId || savedOrder.id) === orderId
   );
 
   if (!order) {
-    showTrackingError(trackingContainer, 'Order not found.');
+    if (showErrors) {
+      showTrackingError(trackingContainer, 'Order not found.');
+    }
     return;
   }
 
   const orderItems = order.items || order.products;
   const item = orderItems?.find((orderItem) => orderItem.productId === productId);
   if (!item) {
-    showTrackingError(trackingContainer, 'Product not found in this order.');
+    if (showErrors) {
+      showTrackingError(trackingContainer, 'Product not found in this order.');
+    }
     return;
   }
 
   const product = getProduct(productId);
   if (!product) {
-    showTrackingError(trackingContainer, 'Product details could not be loaded.');
+    if (showErrors) {
+      showTrackingError(trackingContainer, 'Product details could not be loaded.');
+    }
     return;
   }
 

@@ -1,15 +1,18 @@
 import { db } from './firebase.js';
-import { loadProductsFetch, products } from '../data/products.js';
+import { syncUserDataFromCloud } from '../data/orders.js';
+import {
+    DEFAULT_PRODUCTS,
+    products,
+    startRealtimeProductsSync
+} from '../data/products.js';
 import {
     getAuth,
     onAuthStateChanged
 } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
 import {
     addDoc,
-    collection,
     deleteDoc,
     doc,
-    onSnapshot,
     setDoc
 } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
 
@@ -23,13 +26,15 @@ const productList = document.getElementById('admin-product-list');
 const productCount = document.getElementById('admin-product-count');
 const searchInput = document.getElementById('admin-search-input');
 let isAuthorizedAdmin = false;
-let defaultProductsLoadPromise;
 let isProductListenerStarted = false;
 
 onAuthStateChanged(auth, async (user) => {
     if (user && user.email?.toLowerCase() === 'goodluckbello85@gmail.com') {
         isAuthorizedAdmin = true;
         adminContainer.style.display = 'block';
+        syncUserDataFromCloud(user).catch((error) => {
+            console.error('Could not sync Admin user data.', error);
+        });
         await renderAdminProducts();
         return;
     }
@@ -105,71 +110,38 @@ searchInput.addEventListener('input', () => {
 let cachedAdminProducts = [];
 
 async function renderAdminProducts() {
+    const defaultIds = new Set(DEFAULT_PRODUCTS.map((product) => product.id));
+    cachedAdminProducts = products.map((product) => ({
+        ...product,
+        isDefault: defaultIds.has(String(product.id)),
+        firestoreDocumentId: String(product.id),
+        inStock: product.inStock !== false
+    }));
+    renderAdminProductRows(cachedAdminProducts);
+
     if (isProductListenerStarted) {
-        renderAdminProductRows(cachedAdminProducts);
         return;
     }
 
-    productList.replaceChildren(createListMessage('Loading products...'));
-
-    try {
-        if (!defaultProductsLoadPromise) {
-            defaultProductsLoadPromise = loadProductsFetch();
-        }
-        await defaultProductsLoadPromise;
-
-        onSnapshot(collection(db, 'products'), (snapshot) => {
-            const firestoreProducts = snapshot.docs.map((productDocument) => {
-                const data = productDocument.data();
-                return {
-                    ...data,
-                    id: data.id || productDocument.id,
-                    firestoreDocumentId: productDocument.id
-                };
-            });
-
-            const defaultIds = new Set(products.map((product) => product.id));
-            const firestoreByProductId = new Map();
-            firestoreProducts.forEach((product) => {
-                firestoreByProductId.set(product.id, product);
-                firestoreByProductId.set(product.firestoreDocumentId, product);
-            });
-
-            const defaultInventory = products.map((product) => {
-                const override = firestoreByProductId.get(product.id);
-                return {
-                    ...product,
-                    id: product.id,
-                    isDefault: true,
-                    firestoreDocumentId: override?.firestoreDocumentId || product.id,
-                    inStock: typeof override?.inStock === 'boolean' ? override.inStock : true,
-                    deleted: override?.deleted === true
-                };
-            });
-
-            const customInventory = firestoreProducts
-                .filter((product) => !defaultIds.has(product.id) && !defaultIds.has(product.firestoreDocumentId))
-                .filter((product) => product.deleted !== true)
-                .map((product) => ({
-                    ...product,
-                    isDefault: false,
-                    inStock: product.inStock !== false
-                }));
-
-            cachedAdminProducts = [...defaultInventory, ...customInventory]
-                .filter((product) => product.deleted !== true);
-            renderAdminProductRows(cachedAdminProducts);
-        }, (error) => {
-            console.error('Unable to listen for admin product updates:', error);
-            productCount.textContent = '0';
-            productList.replaceChildren(createListMessage('Unable to load products. Please try again.'));
+    startRealtimeProductsSync((mergedProducts, firestoreProducts = []) => {
+        const firestoreByProductId = new Map();
+        firestoreProducts.forEach((product) => {
+            firestoreByProductId.set(product.id, product);
+            firestoreByProductId.set(product.firestoreDocumentId, product);
         });
-        isProductListenerStarted = true;
-    } catch (error) {
-        console.error('Unable to load admin products:', error);
-        productCount.textContent = '0';
-        productList.replaceChildren(createListMessage('Unable to load products. Please try again.'));
-    }
+
+        cachedAdminProducts = mergedProducts.map((product) => {
+            const override = firestoreByProductId.get(String(product.id));
+            return {
+                ...product,
+                isDefault: defaultIds.has(String(product.id)),
+                firestoreDocumentId: override?.firestoreDocumentId || String(product.id),
+                inStock: product.inStock !== false
+            };
+        });
+        renderAdminProductRows(cachedAdminProducts);
+    });
+    isProductListenerStarted = true;
 }
 
 function renderAdminProductRows(productsToRender) {
@@ -242,7 +214,7 @@ async function toggleProductStock(product, button) {
 
     button.disabled = true;
     try {
-        await setDoc(doc(db, 'products', String(product.id)), {
+        await setDoc(doc(db, 'products', product.firestoreDocumentId || String(product.id)), {
             id: String(product.id),
             name: product.name,
             priceCents: product.priceCents,
@@ -267,7 +239,7 @@ async function deleteProduct(product, button) {
     button.disabled = true;
     try {
         if (product.isDefault) {
-            await setDoc(doc(db, 'products', product.id), {
+            await setDoc(doc(db, 'products', product.firestoreDocumentId || product.id), {
                 id: product.id,
                 deleted: true
             }, { merge: true });

@@ -2,13 +2,12 @@ import {
   auth,
   db,
   googleProvider,
-  facebookProvider,
   signInWithPopup,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  onAuthStateChanged,
-  updateProfile
+  onAuthStateChanged
 } from './firebase.js';
+import { FacebookAuthProvider } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
 import {
   doc,
   getDoc,
@@ -155,9 +154,7 @@ document.querySelectorAll('#btn-google, #btn-google-signup').forEach((button) =>
 });
 
 document.querySelectorAll('#btn-facebook, #btn-facebook-signup').forEach((button) => {
-  button.addEventListener('click', () =>
-    runAuthAction(button, () => signInWithPopup(auth, facebookProvider))
-  );
+  button.addEventListener('click', () => runFacebookAuthAction(button));
 });
 
 function showPanel(panel) {
@@ -218,23 +215,15 @@ async function confirmSignupOtp(event) {
   setBusy(confirmButton, true);
   isCompletingSignup = true;
   try {
-    const credential = await createUserWithEmailAndPassword(
-      auth,
-      pendingSignup.email.trim(),
-      pendingSignup.password
-    );
+    const { name, email, password } = pendingSignup;
+    const userCred = await createUserWithEmailAndPassword(auth, email.trim(), password);
     try {
-      if (pendingSignup.name) {
-        await updateProfile(credential.user, { displayName: pendingSignup.name });
-      }
-    } catch (profileErr) {
-      console.warn(profileErr);
-    }
-    try {
-      await setDoc(doc(db, 'users', credential.user.uid), {
-        name: pendingSignup.name,
-        email: credential.user.email || pendingSignup.email
-      });
+      setDoc(doc(db, 'users', userCred.user.uid), {
+        fullName: name,
+        email: email.trim(),
+        emailVerified: true,
+        createdAt: new Date().toISOString()
+      }).catch((syncErr) => console.warn(syncErr));
     } catch (syncErr) {
       console.warn(syncErr);
     }
@@ -247,6 +236,41 @@ async function confirmSignupOtp(event) {
     showAuthError(error);
   } finally {
     setBusy(confirmButton, false);
+  }
+}
+
+async function runFacebookAuthAction(button) {
+  clearAuthError();
+  authButtons.forEach((authButton) => {
+    authButton.disabled = true;
+  });
+  button.setAttribute('aria-busy', 'true');
+
+  try {
+    const fbProvider = new FacebookAuthProvider();
+    const userCred = await signInWithPopup(auth, fbProvider);
+    try {
+      setDoc(
+        doc(db, 'users', userCred.user.uid),
+        {
+          name: userCred.user.displayName || '',
+          email: userCred.user.email || ''
+        },
+        { merge: true }
+      ).catch((syncErr) => console.warn(syncErr));
+    } catch (syncErr) {
+      console.warn(syncErr);
+    }
+    window.location.href = 'amazon.html';
+  } catch (error) {
+    errorBanner.textContent =
+      'Facebook Login is currently being verified. Please continue with Google or Email.';
+    errorBanner.hidden = false;
+  } finally {
+    authButtons.forEach((authButton) => {
+      authButton.disabled = false;
+    });
+    button.removeAttribute('aria-busy');
   }
 }
 
