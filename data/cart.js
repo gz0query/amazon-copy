@@ -42,8 +42,9 @@ function activateCurrentUserCart() {
 
 export function loadFromStorage() {
   try {
-    const storedCart = localStorage.getItem(getCartStorageKey());
-    const parsedCart = storedCart ? JSON.parse(storedCart) : [];
+    const storageKey = getCartStorageKey();
+    const storedCart = localStorage.getItem(storageKey) ?? localStorage.getItem('cart');
+    const parsedCart = storedCart !== null ? JSON.parse(storedCart) : [];
     cart.length = 0;
     cart.push(...(Array.isArray(parsedCart) ? parsedCart : []));
     sanitizeCart();
@@ -56,11 +57,14 @@ export function loadFromStorage() {
 
 export function setCartUser(userId) {
   if (!userId) {
+    const previousUserId = activeUserId;
     activeUserId = 'guest';
     cart.length = 0;
     cartRevision += 1;
     localStorage.removeItem('cart');
     localStorage.removeItem('cartUserId');
+    localStorage.removeItem(`cart_${previousUserId}`);
+    localStorage.removeItem('cart_guest');
     dispatchCartUpdated();
     return cart;
   }

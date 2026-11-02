@@ -19,8 +19,9 @@ let userSnapshotPromise;
 
 function loadOrders() {
   try {
-    const storedOrders = localStorage.getItem(`orders_${activeUserId}`);
-    const parsedOrders = storedOrders ? JSON.parse(storedOrders) : [];
+    const storageKey = `orders_${activeUserId}`;
+    const storedOrders = localStorage.getItem(storageKey) ?? localStorage.getItem('orders');
+    const parsedOrders = storedOrders !== null ? JSON.parse(storedOrders) : [];
     return Array.isArray(parsedOrders) ? parsedOrders : [];
   } catch (error) {
     console.warn('Could not load saved orders.', error);
@@ -32,10 +33,13 @@ export let orders = loadOrders();
 
 export function setOrdersUser(userId) {
   if (!userId) {
+    const previousUserId = activeUserId;
     activeUserId = 'guest';
     orders.length = 0;
     localStorage.removeItem('orders');
     localStorage.removeItem('ordersUserId');
+    localStorage.removeItem(`orders_${previousUserId}`);
+    localStorage.removeItem('orders_guest');
     dispatchOrdersUpdated();
     return orders;
   }
